@@ -9,7 +9,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use App\Services\FirebaseService;
 
-class EnviarTurnosFCM implements ShouldQueue
+class EnviarTurnosFCM
 {
     use Dispatchable, Queueable, SerializesModels;
 
@@ -20,39 +20,35 @@ class EnviarTurnosFCM implements ShouldQueue
         $this->ids = $ids;
     }
 
-    public function handle()
-    {
-        $turnos = DB::table("tbl_lista_espera")
-            ->whereIn("id", $this->ids)
-            ->get();
+public function handle()
+{
+    \Log::info("Job EnviarTurnosFCM iniciado", ["ids" => $this->ids]);
 
-        \Log::info("Worker ejecutando FCM");
+    $turnos = DB::table("tbl_lista_espera")
+        ->whereIn("id", $this->ids)
+        ->get();
 
-        foreach ($turnos as $turno) {
+    $tokens = [];
 
-            $usuario = DB::table("tbl_usuarios")
-                ->where("id", $turno->usuario_id)
-                ->first();
+    foreach ($turnos as $turno) {
 
-            if (!$usuario || !$usuario->fcm_token) {
-                continue;
-            }
+        $usuario = DB::table("tbl_usuarios")
+            ->where("id", $turno->usuario_id)
+            ->first();
 
-            try {
-
-                FirebaseService::enviarNotificacion(
-                    $usuario->fcm_token,
-                    "Es tu turno",
-                    "Puedes tomar pedido"
-                );
-
-            } catch (\Exception $e) {
-
-                \Log::error(
-                    "Error FCM turno ".$turno->id." : ".$e->getMessage()
-                );
-
-            }
+        if ($usuario && $usuario->fcm_token) {
+            $tokens[] = $usuario->fcm_token;
         }
     }
+
+    if (!empty($tokens)) {
+            \Log::info("Job EnviarTurnosFCMMultiple iniciado", ["ids" => $this->ids]);
+        FirebaseService::enviarNotificacionMultiple(
+            $tokens,
+            "Es tu turno",
+            "Puedes tomar pedido"
+        );
+    }
+}
+
 }

@@ -52,6 +52,13 @@ class FirebaseService
                     ]
                 ]
             );
+            if (isset($response['error']['details'][0]['errorCode']) &&
+                $response['error']['details'][0]['errorCode'] === 'UNREGISTERED') {
+            
+                Log::warning("Token inválido detectado", [
+                    "token" => $token
+                ]);
+            }
 
             // Registrar respuesta para depuración
             Log::info("Respuesta FCM", [
@@ -78,4 +85,38 @@ class FirebaseService
             return false;
         }
     }
+    
+    public static function enviarNotificacionMultiple($tokens, $titulo, $mensaje)
+    {
+        $tokens = array_unique(array_filter($tokens));
+    
+        foreach ($tokens as $token) {
+    
+            self::enviarNotificacion(
+                $token,
+                $titulo,
+                $mensaje
+            );
+        }
+    }
+    
+    /*public static function enviarNotificacionMultiple($tokens, $titulo, $mensaje)
+{
+    $url = "https://fcm.googleapis.com/v1/projects/TU_PROJECT/messages:send";
+
+    foreach ($tokens as $token) {
+
+        $data = [
+            "message" => [
+                "token" => $token,
+                "notification" => [
+                    "title" => $titulo,
+                    "body" => $mensaje
+                ]
+            ]
+        ];
+
+        // envío HTTP igual que tu método actual
+    }
+}*/
 }

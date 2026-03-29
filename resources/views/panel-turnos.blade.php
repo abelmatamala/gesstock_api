@@ -220,7 +220,7 @@ if (!token || !usuario || !sucursal) {
             $(row).addClass('fila-fuera');
         }
     },
-    order: [[3, "desc"]],
+    order: [[3, "desc"],[0,"desc"]],
     scrollY: "60vh",
     scrollCollapse: true,
     paging: false,

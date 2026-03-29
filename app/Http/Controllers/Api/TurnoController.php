@@ -10,7 +10,7 @@ use App\Services\FirebaseService;
 use App\Models\CodigoQr;
 use App\Models\Sucursal;
 use App\Models\Turno;
-use App\jobs\EnviarTurnosFCM;
+use App\Jobs\EnviarTurnosFCM;
 
 class TurnoController extends Controller
 {
@@ -112,7 +112,8 @@ class TurnoController extends Controller
                 "fecha_asignado" => now(),
             ]);
 
-        dispatch(new EnviarTurnosFCM($ids));
+        //dispatch(new EnviarTurnosFCM($ids));
+            (new EnviarTurnosFCM($ids))->handle();
 
         return response()->json([
             "mensaje" => "Turnos asignados",
@@ -281,41 +282,6 @@ class TurnoController extends Controller
         });
     }
 
-
-    public function anular($id)
-    {
-        $turno = DB::table("tbl_lista_espera")
-            ->where("id", $id)
-            ->where("usuario_id", auth()->id())
-            ->first();
-
-        if (!$turno) {
-            return response()->json([
-                "success" => false,
-                "message" => "Turno no encontrado"
-            ], 404);
-        }
-
-        if ($turno->estado !== "en_espera") {
-            return response()->json([
-                "success" => false,
-                "message" => "No se puede anular este turno"
-            ], 400);
-        }
-
-        DB::table("tbl_lista_espera")
-            ->where("id", $id)
-            ->update([
-                "estado" => "anulado"
-            ]);
-
-        return response()->json([
-            "success" => true,
-            "message" => "Turno anulado correctamente"
-        ]);
-    }
-
-
     public function estado($id)
     {
         $turno = DB::table("tbl_lista_espera")->where("id", $id)->first();
@@ -374,28 +340,63 @@ class TurnoController extends Controller
             "turno_id" => $turno->id,
         ]);
     }
-
-        public function posicionamiento(Request $request)
+    
+    public function posicionamiento(Request $request)
     {
-        $request->validate([
-            'sucursal_id' => 'required',
-            'lat' => 'required',
-            'lng' => 'required'
+    $request->validate([
+        'sucursal_id' => 'required',
+        'lat' => 'required',
+        'lng' => 'required'
+    ]);
+
+    DB::table('tbl_sucursales')
+        ->where('id', $request->sucursal_id)
+        ->update([
+            'lat' => $request->lat,
+            'lng' => $request->lng,
+            'updated_at' => now()
         ]);
 
-        DB::table('tbl_sucursales')
-            ->where('id', $request->sucursal_id)
-            ->update([
-                'lat' => $request->lat,
-                'lng' => $request->lng,
-                'updated_at' => now()
-            ]);
+    return response()->json([
+        'ok' => true,
+        'mensaje' => 'Ubicación de sucursal actualizada'
+    ]);
+}
 
+    public function anular($id)
+    {
+        $turno = DB::table("tbl_lista_espera")
+            ->where("id", $id)
+            ->where("usuario_id", auth()->id())
+            ->first();
+    
+        if (!$turno) {
+            return response()->json([
+                "success" => false,
+                "message" => "Turno no encontrado"
+            ], 404);
+        }
+    
+        if ($turno->estado !== "en_espera") {
+            return response()->json([
+                "success" => false,
+                "message" => "No se puede anular este turno"
+            ], 400);
+        }
+    
+        DB::table("tbl_lista_espera")
+            ->where("id", $id)
+            ->update([
+                "estado" => "anulado"
+            ]);
+    
         return response()->json([
-            'ok' => true,
-            'mensaje' => 'Ubicación de sucursal actualizada'
+            "success" => true,
+            "message" => "Turno anulado correctamente"
         ]);
     }
+
+
 }
 
 

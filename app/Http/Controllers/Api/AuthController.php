@@ -21,6 +21,7 @@ class AuthController extends Controller
             //\Log::info("Usuario no autenticado");
             return response()->json(
                 [
+                    "success" => false,
                     "error" => "Usuario no autenticado",
                 ],
                 401
@@ -54,6 +55,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json(
                 [
+                    "success" => false,
                     "error" => $validator->errors()->first(),
                 ],
                 422
@@ -71,6 +73,7 @@ class AuthController extends Controller
 
             return response()->json(
                 [
+                    "success" => false,
                     "error" => "Error interno del servidor",
                 ],
                 500
@@ -80,6 +83,7 @@ class AuthController extends Controller
         if (!$token) {
             return response()->json(
                 [
+                    "success" => false,
                     "error" => "Credenciales inválidas",
                 ],
                 401
@@ -91,6 +95,7 @@ class AuthController extends Controller
         if (!$user->activo) {
             return response()->json(
                 [
+                    "success" => false,
                     "error" => "Usuario inactivo",
                 ],
                 403
@@ -105,6 +110,7 @@ class AuthController extends Controller
         if ($rolesIds->isEmpty()) {
             return response()->json(
                 [
+                    "success" => false,
                     "error" => "Usuario sin roles asignados",
                 ],
                 403
@@ -123,6 +129,7 @@ class AuthController extends Controller
         if (!$tienePermisos) {
             return response()->json(
                 [
+                    "success" => false,
                     "error" => "Usuario no autorizado para esta plataforma",
                 ],
                 403

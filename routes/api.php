@@ -67,18 +67,22 @@ Route::prefix("app")
             ->middleware("permiso:tomar-turno,crear"
         );
 
-        // 👇 NUEVA RUTA PARA CONSULTAR ESTADO
-        Route::get("/estado/{id}", [TurnoController::class, "estado"])
-            ->middleware("permiso:tomar-turno,ver"
-        );
-
-        Route::get("/anular/{id}", [TurnoController::class, "anular"])
-            ->middleware("permiso:tomar-turno,crear"
-        );
+        
         // 🔹 INGRESAR POSICION EN LA SUCURSAL
         Route::post("/posicion", [TurnoController::class, "posicionamiento"])
             ->middleware("permiso:posicion,editar"
         );
-       Route::post("/registrar-dispositivo", [AuthController::class, "registrarDispositivo"])->middleware("jwt");
+
+        // 👇 NUEVA RUTA PARA CONSULTAR ESTADO
+        Route::post("/estado/{id}", [TurnoController::class, "estado"])
+            ->middleware("permiso:tomar-turno,crear"
+        );
+        
+        Route::post("/registrar-dispositivo", [AuthController::class, "registrarDispositivo"])->middleware("jwt");
+       
+        Route::post("/anular/{id}", [TurnoController::class, "anular"])
+            ->middleware("permiso:tomar-turno,crear"
+        );
+
     });
 
