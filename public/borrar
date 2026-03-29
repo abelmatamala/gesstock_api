@@ -1,0 +1,99 @@
+{
+        dd('entra al login');
+        $validator = \Validator::make($request->all(), [
+            'run' => 'required',
+            'password' => 'required',
+            'platform' => 'required|in:web,android'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => $validator->errors()->first()
+            ], 422);
+        }
+
+        $credentials = $request->only('run', 'password');
+        $platform = $request->platform;
+
+        if (!$token = auth()->attempt($credentials)) {
+            return response()->json([
+                'error' => 'Credenciales inválidas'
+            ], 401);
+        }
+
+        $user = auth()->user();
+
+        if (!$user->activo) {
+            return response()->json([
+                'error' => 'Usuario inactivo'
+            ], 403);
+        }
+
+        // 🔹 Obtener roles del usuario (N:M)
+        $rolesIds = \DB::table('tbl_usuario_rol')
+            ->where('usuario_id', $user->id)
+            ->pluck('rol_id');
+
+        if ($rolesIds->isEmpty()) {
+            return response()->json([
+                'error' => 'Usuario sin roles asignados'
+            ], 403);
+        }
+
+        // 🔹 Validar acceso por plataforma
+        $tienePermisos = \DB::table('tbl_roles_modulos as rm')
+            ->join('tbl_modulos as m', 'rm.modulo_id', '=', 'm.id')
+            ->whereIn('rm.rol_id', $rolesIds)
+            ->where(function ($q) use ($platform) {
+                $q->where('m.platform', $platform)
+                  ->orWhere('m.platform', 'both');
+            })
+            ->exists();
+
+        if (!$tienePermisos) {
+            return response()->json([
+                'error' => 'Usuario no autorizado para esta plataforma'
+            ], 403);
+        }
+
+        // 🔹 Obtener permisos completos
+        $permisos = \DB::table('tbl_roles_modulos as rm')
+            ->join('tbl_modulos as m', 'rm.modulo_id', '=', 'm.id')
+            ->join('tbl_modulo_acciones as ma', 'm.id', '=', 'ma.modulo_id')
+            ->join('tbl_acciones as a', 'ma.accion_id', '=', 'a.id')
+            ->whereIn('rm.rol_id', $rolesIds)
+            ->where(function ($q) use ($platform) {
+                $q->where('m.platform', $platform)
+                  ->orWhere('m.platform', 'both');
+            })
+            ->select('m.nombre as modulo', 'a.nombre as accion')
+            ->get();
+
+        $permisosAgrupados = [];
+
+        foreach ($permisos as $permiso) {
+            $permisosAgrupados[$permiso->modulo][] = $permiso->accion;
+        }
+
+        // 🔹 Obtener sucursales
+        $sucursales = \DB::table('tbl_usuario_sucursal as us')
+            ->join('tbl_sucursales as s', 'us.sucursal_id', '=', 's.id')
+            ->where('us.usuario_id', $user->id)
+            ->select('s.id', 's.nombre')
+            ->get();
+
+        return response()->json([
+            'token' => $token,
+            'usuario' => [
+                'id' => $user->id,
+                'run' => $user->run,
+                'nombre' => $user->nombre,
+                'apellido' => $user->apellido,
+                'nombre_completo' => trim($user->nombre . ' ' . $user->apellido),
+            ],
+            'platform' => $platform,
+            'roles' => $rolesIds,
+            'sucursales' => $sucursales,
+            'permissions' => $permisosAgrupados
+        ]);
+    }
