@@ -96,7 +96,7 @@
 
     
 <div class="login-card">
-    <h2>Login 123</h2>
+    <h2>Login</h2>
     <div class="error" id="error"></div>
     <input type="text" id="run" placeholder="Usuario">
     <input type="password" id="password" placeholder="Contraseña">
