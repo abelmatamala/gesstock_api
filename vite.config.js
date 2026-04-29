@@ -6,21 +6,16 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ["resources/css/app.css", "resources/js/app.js"],
-            refresh: true
+            refresh: true,
         }),
-        tailwindcss()
+        tailwindcss(),
     ],
     server: {
-        host: "0.0.0.0",
+        host: true,
         port: 5173,
         cors: true,
         strictPort: true,
-        hmr: {
-            host: "192.168.1.11",
-            protocol: "ws"
-        }
-        //watch: {
-        //    ignored: ['**/storage/framework/views/**'],
-        //},
-    }
+        origin: "http://192.168.1.210:5173", // 🔥 CLAVE
+    },
 });
+
