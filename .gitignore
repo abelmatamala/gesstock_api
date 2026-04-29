@@ -1,28 +1,53 @@
-*.log
-.DS_Store
+# =========================
+# Laravel
+# =========================
+/vendor/
+/storage/*.key
+/storage/app/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*.php
+
+# =========================
+# Entorno
+# =========================
 .env
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
-/auth.json
-/node_modules
-/public/build
+
+# =========================
+# Node / Vite
+# =========================
+/node_modules/
+/public/build/
 /public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/storage/framework/*
-/storage/logs/*
-/public/app/*.apk
-*.zip
-/vendor
-Homestead.json
-Homestead.yaml
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# =========================
+# IDE / Sistema
+# =========================
+/.idea/
+/.vscode/
+.DS_Store
 Thumbs.db
+
+# =========================
+# Archivos temporales
+# =========================
+*.log
+*.tmp
+*.swp
+
+# =========================
+# Base de datos / dumps
+# =========================
+*.sql
+
+# =========================
+# Otros (por si usas uploads directos)
+# =========================
+/public/storage

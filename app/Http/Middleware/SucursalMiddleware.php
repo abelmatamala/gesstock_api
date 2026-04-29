@@ -52,5 +52,4 @@ class SucursalMiddleware
         return $next($request);
     }
 }
-    }
-}
+    
