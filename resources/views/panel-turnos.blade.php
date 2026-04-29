@@ -43,7 +43,7 @@ if (!token || !usuario || !sucursal) {
         <img id="imagenPreview" src="">
     </div>
 
-    <input type="file" id="inputImagen" accept="image/*" hidden>
+    <input type="file" id="inputImagen" accept=".jpg,.png,.pdf" hidden>
 
     <button class="btn" onclick="document.getElementById('inputImagen').click()">
         Cargar Imagen

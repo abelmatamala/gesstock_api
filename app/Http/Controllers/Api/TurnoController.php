@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request; // 👈 ESTE FALTABA
+use Illuminate\Http\Request; // ðŸ‘ˆ ESTE FALTABA
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Services\FirebaseService;
@@ -14,7 +14,7 @@ use App\Jobs\EnviarTurnosFCM;
 
 class TurnoController extends Controller
 {
-    // 📋 Lista de turnos por sucursal
+    // ðŸ“‹ Lista de turnos por sucursal
     public function lista($sucursalId)
     {
         $hoy = now("America/Santiago")->format("Y-m-d");
@@ -35,8 +35,8 @@ class TurnoController extends Controller
             ->get();
     }
 
-    // 🔄 Asignar turno
-    public function asignar(Request $request)
+    // ðŸ”„ Asignar turno
+    /*public function asignar(Request $request)
     {
         $sucursalId = $request->sucursal_id;
 
@@ -64,7 +64,7 @@ class TurnoController extends Controller
                 "fecha_asignado" => now(),
             ]);
 
-        // 🔔 Enviar notificación al usuario
+        // ðŸ”” Enviar notificaciÃ³n al usuario
         $usuario = DB::table("tbl_usuarios")
             ->where("id", $turno->usuario_id)
             ->first();
@@ -80,9 +80,73 @@ class TurnoController extends Controller
             "mensaje" => "Turno asignado correctamente",
             "turno_id" => $turno->id,
         ]);
+    }*/
+        public function asignar(Request $request)
+{
+    $sucursalId = $request->sucursal_id;
+
+    // 🔍 Buscar turno
+    $turno = DB::table("tbl_lista_espera")
+        ->where("sucursal_id", $sucursalId)
+        ->whereDate("fecha_ingreso", today())
+        ->where("estado", "en_espera")
+        ->orderBy("fecha_ingreso", "asc")
+        ->first();
+
+    if (!$turno) {
+        return response()->json([
+            "message" => "No hay turnos pendientes",
+        ], 404);
     }
 
-    // 🔄 Asignar turno a todos
+    // 🔒 Evitar doble asignación (condición de carrera)
+    $updated = DB::table("tbl_lista_espera")
+        ->where("id", $turno->id)
+        ->where("estado", "en_espera")
+        ->update([
+            "estado" => "asignado",
+            "fecha_asignado" => now(),
+        ]);
+
+    if ($updated === 0) {
+        return response()->json([
+            "message" => "El turno ya fue tomado por otro proceso",
+        ], 409);
+    }
+
+    // 👤 Usuario
+    $usuario = DB::table("tbl_usuarios")
+        ->where("id", $turno->usuario_id)
+        ->first();
+
+    // 🔔 Notificación
+    if ($usuario && $usuario->fcm_token) {
+
+        $response = FirebaseService::enviarNotificacion(
+            $usuario->fcm_token,
+            [
+                "Titulo" => "Es tu turno..",
+                "Mensaje"=> "Puedes tomar pedido..",
+                "tipo" => "turno",
+                "turno_id" => $turno->id
+            ]
+        );
+
+        // 🧹 Limpieza de token inválido
+        if ($response === false) {
+            \Log::warning("FCM falló para usuario", [
+                "usuario_id" => $usuario->id
+            ]);
+        }
+    }
+
+    return response()->json([
+        "mensaje" => "Turno asignado correctamente",
+        "turno_id" => $turno->id,
+    ]);
+}
+
+    // ðŸ”„ Asignar turno a todos
     public function asignarTodos(Request $request)
     {
         $sucursalId = $request->sucursal_id;
@@ -120,12 +184,13 @@ class TurnoController extends Controller
             "cantidad" => $ids->count(),
         ]);
     }
-    // ➕ Crear turno manual
+    // âž• Crear turno manual
 
     public function tomarTurnoAndroid(Request $request)
     {
         return DB::transaction(function () use ($request) {
-            // 🔎 Validar QR activo
+            $user = auth()->user();
+            // ðŸ”Ž Validar QR activo
             $qr = CodigoQr::where("token", trim($request->qr_token))
                 ->where("activo", 1)
                 ->lockForUpdate()
@@ -135,13 +200,13 @@ class TurnoController extends Controller
                 return response()->json(
                     [
                         "success" => false,
-                        "message" => "QR inválido o ya utilizado",
+                        "message" => "QR invÃ¡lido o ya utilizado",
                     ],
                     403
                 );
             }
 
-            // 🏢 Validar sucursal
+            // ðŸ¢ Validar sucursal
             $sucursal = Sucursal::find($qr->sucursal_id);
 
             if (!$sucursal) {
@@ -169,7 +234,7 @@ class TurnoController extends Controller
                 );
             }
 
-            // 🔒 Verificar duplicado en espera
+            // ðŸ”’ Verificar duplicado en espera
             $yaEnEspera = DB::table("tbl_lista_espera")
                 ->where("usuario_id", auth()->id())
                 ->where("sucursal_id", $sucursal->id)
@@ -187,7 +252,7 @@ class TurnoController extends Controller
                 );
             }
 
-            // 📍 Validar geolocalización
+            // ðŸ“ Validar geolocalizaciÃ³n
             $request->validate([
                 "lat" => "nullable|numeric",
                 "lng" => "nullable|numeric",
@@ -224,7 +289,7 @@ class TurnoController extends Controller
                 $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
                 $distancia = $earthRadius * $c;
 
-                // ✅ Solo si está dentro del radio
+                // âœ… Solo si estÃ¡ dentro del radio
                 if ($distancia <= $radioPermitido) {
                     $hoy = now()->toDateString();
 
@@ -238,20 +303,23 @@ class TurnoController extends Controller
                 }
             }
 
-            // 📝 Crear turno
+            // ðŸ“ Crear turno
             $turno = Turno::create([
                 "sucursal_id" => $sucursal->id,
                 "usuario_id" => auth()->id(),
                 "numero_turno" => $numeroTurno,
                 "estado" => $estado,
+                // Antes solo se guardaban los campos base del turno.
+                // Ahora persistimos el FCM vigente del usuario dentro de tbl_lista_espera.
+                "fcm_token" => $user->fcm_token ?? null,
                 "fecha_ingreso" => now(),
                 "fecha_asignado" => null,
             ]);
 
-            // 🔄 Invalidar QR
+            // ðŸ”„ Invalidar QR
             $qr->update(["activo" => 0]);
 
-            // 🔁 Generar nuevo QR
+            // ðŸ” Generar nuevo QR
             CodigoQr::create([
                 "sucursal_id" => $sucursal->id,
                 "token" => Str::random(64),
@@ -264,7 +332,7 @@ class TurnoController extends Controller
                 $mensaje = "Turno registrado correctamente";
                 $success = true;
             } else {
-                $mensaje = "Estás fuera del rango de la sucursal";
+                $mensaje = "EstÃ¡s fuera del rango de la sucursal";
                 $success = false;
             }
 
@@ -358,8 +426,8 @@ class TurnoController extends Controller
         ]);
 
     return response()->json([
-        'ok' => true,
-        'mensaje' => 'Ubicación de sucursal actualizada'
+        'success' => true,
+        'mensaje' => 'UbicaciÃ³n de sucursal actualizada'
     ]);
 }
 
@@ -387,7 +455,10 @@ class TurnoController extends Controller
         DB::table("tbl_lista_espera")
             ->where("id", $id)
             ->update([
-                "estado" => "anulado"
+                // Antes solo se cambiaba el estado.
+                // Ahora se deja registrada la hora exacta de la anulacion.
+                "estado" => "anulado",
+                "fecha_asignado" => now()
             ]);
     
         return response()->json([

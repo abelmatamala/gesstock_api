@@ -1,0 +1,240 @@
+# ✅ Checklist Técnico – Módulo RequerimientoDetalle
+
+---
+
+## 🔹 1. Backend – Base funcional
+
+### ☐ Asignación de runner
+
+* ☐ Endpoint `tomarRequerimiento`
+* ☐ Solo asigna si `usuario_gestor_id IS NULL`
+* ☐ Evita doble asignación (condición en UPDATE)
+
+---
+
+### ✅ Listado de requerimientos
+
+* ✅ Shopper → filtra por `usuario_crea_id`
+* ✅ Runner → muestra todos
+* ✅ Filtra por fecha actual (`whereDate`)
+
+---
+
+### ☐ Estados correctos
+
+* ✅ SIN_RESPUESTA
+* ☐ ACTIVO / EN_PROCESO
+* ✅ CERRADO
+* ☐ EXPIRADO
+
+---
+
+### ☐ Validación respuestas
+
+* ☐ Shopper NO puede usar `cierra_requerimiento = 1`
+* ☐ Runner puede usar todas
+* ☐ boton agregar respuesta para el Shopper no debe estar disponible hasta que le respondan 
+
+---
+
+### ☐ Notificaciones (FCM)
+
+* ☐ Nueva respuesta → notifica contraparte
+* ☐ Cierre → notifica a ambos
+* ☐ Validar token activo (evitar UNREGISTERED)
+
+---
+
+## 🔹 2. Android – Lista de requerimientos
+
+### ☐ Vista lista
+
+* ☐ Mis requerimientos (shopper)
+* ☐ Todos (runner)
+* ☐ Mostrar:
+
+  * ☐ producto
+  * ☐ estado
+  * ☐ tiempo restante
+
+---
+
+### ☐ Indicadores visuales (runner)
+
+* ☐ En gestión → borde azul
+* ☐ Gestionado antes → borde gris
+
+---
+
+### ☐ Navegación
+
+* ☐ Click → `requerimiento_detalle/{id}`
+
+---
+
+## 🔹 3. Android – Detalle (pantalla clave)
+
+### ☐ Carga inicial
+
+* ☐ Obtener historial
+* ☐ Ejecutar asignación automática (runner)
+
+```kotlin
+LaunchedEffect(reqId) {
+    viewModel.tomarRequerimiento(reqId)
+}
+```
+
+---
+
+### ☐ Header
+
+* ☐ Producto
+* ☐ Estado
+* ☐ Timer visible
+
+---
+
+### ☐ Historial tipo chat
+
+* ☐ Primer item = creación
+* ☐ Orden cronológico
+* ☐ Mostrar:
+
+  * ☐ usuario
+  * ☐ mensaje
+  * ☐ fecha
+  * ☐ imagen (si existe)
+
+---
+
+### ☐ Imágenes
+
+* ☐ Click → fullscreen
+* ☐ Modal fondo negro
+* ☐ Cierre con tap
+
+---
+
+## 🔹 4. Input de respuestas
+
+### ☐ Visibilidad
+
+* ☐ SOLO si estado activo
+
+---
+
+### ☐ Restricciones
+
+* ☐ Shopper → filtrar respuestas
+* ☐ Runner → sin restricción
+
+---
+
+### ☐ Envío
+
+* ☐ POST respuesta
+* ☐ Refrescar historial
+* ☐ Disparar notificación
+
+---
+
+## 🔹 5. Timer (lógica crítica)
+
+### ☐ Backend define:
+
+* ☐ tiempo_espera
+* ☐ tiempo_respuesta
+* ☐ tiempo_maximo
+
+---
+
+### ☐ App calcula:
+
+* ☐ tiempo restante dinámico
+* ☐ basado en:
+
+  * ☐ created_at
+  * ☐ ultima_respuesta_at
+
+---
+
+### ☐ UI colores
+
+* ☐ Verde (>50%)
+* ☐ Amarillo (<50%)
+* ☐ Rojo (<1 min)
+* ☐ Segundos en vivo
+
+---
+
+## 🔹 6. Cierre automático
+
+### ☐ Backend controla:
+
+* ☐ Sin respuesta → cierre
+* ☐ Tiempo extendido expira
+* ☐ Llega a máximo
+* ☐ Respuesta con cierre
+
+---
+
+### ☐ App refleja:
+
+* ☐ Estado actualizado
+* ☐ Input bloqueado
+
+---
+
+## 🔹 7. Validaciones críticas
+
+### ☐ No permitir:
+
+* ☐ Responder si está cerrado
+* ☐ Doble asignación runner
+* ☐ Shopper cerrando requerimiento
+
+---
+
+### ☐ Evitar errores:
+
+* ☐ Notificaciones duplicadas
+* ☐ Timer desincronizado
+* ☐ Lista con estados incorrectos
+
+---
+
+## 🔹 8. Orden de desarrollo recomendado
+
+1. ☐ Asignación runner
+2. ☐ Lista correcta (roles)
+3. ☐ Detalle + historial
+4. ☐ Respuestas + validaciones
+5. ☐ Notificaciones
+6. ☐ Timer
+7. ☐ Ajustes visuales
+
+---
+
+## 🧠 Uso práctico
+
+✔ Marca cada ítem al implementar
+✔ No avances si el anterior no está estable
+✔ Usa logs en cada paso (Log.d / Laravel Log)
+
+---
+CREACIÓN
+estado = esperando_respuesta
+activo = true
+
+↓ runner toma
+estado = en_gestion
+activo = true
+
+↓ respuesta que cierra
+estado = cerrado
+activo = false
+
+↓ timeout (sin respuesta o fuera de SLA)
+estado = expirado
+activo = false

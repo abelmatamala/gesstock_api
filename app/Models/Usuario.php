@@ -53,15 +53,15 @@ class Usuario extends Authenticatable implements JWTSubject
         'rol_id'
     );
 }
-    public function hasPermission($modulo, $accion)
-    {
-    return \DB::table('tbl_role_permisos as rp')
-        ->join('tbl_modulo_acciones as ma', 'rp.modulo_accion_id', '=', 'ma.id')
-        ->join('tbl_modulos as m', 'ma.modulo_id', '=', 'm.id')
-        ->join('tbl_acciones as a', 'ma.accion_id', '=', 'a.id')
-        ->where('rp.role_id', $this->rol_id)
+public function hasPermission($modulo, $accion)
+{
+    return \DB::table('tbl_usuario_rol as ur')
+        ->join('tbl_roles_modulo_accion as rma', 'ur.rol_id', '=', 'rma.rol_id')
+        ->join('tbl_modulos as m', 'rma.modulo_id', '=', 'm.id')
+        ->join('tbl_acciones as a', 'rma.accion_id', '=', 'a.id')
+        ->where('ur.usuario_id', $this->id)
         ->where('m.nombre', $modulo)
         ->where('a.nombre', $accion)
         ->exists();
-    }
+}
 }

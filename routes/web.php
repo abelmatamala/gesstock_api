@@ -15,10 +15,3 @@ Route::get('/panel-turnos', function () {
 Route::get('/seleccionar-sucursal', function () {
     return view('seleccionar-sucursal');
 });
-Route::get('/fix', function () {
-    Artisan::call('config:clear');
-    Artisan::call('cache:clear');
-    Artisan::call('storage:link');
-
-    return 'OK - limpiado y link creado';
-});

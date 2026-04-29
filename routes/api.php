@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TurnoController;
 use App\Http\Controllers\Api\QrController;
+use App\Http\Controllers\Api\StockController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,7 +35,7 @@ Route::prefix("web")
 
         // 🔹 ASIGNAR TURNO (cambia estado → editar)
         Route::post("/asignar-turno", [TurnoController::class, "asignar"])->middleware("permiso:turnos,aprobar_turno");
-    
+
         // 🔹 ASIGNAR TURNO (cambia estado → editar)
         Route::post("/asignar-todos", [TurnoController::class, "asignartodos"])->middleware("permiso:turnos,aprobar_turno");
 
@@ -60,29 +61,46 @@ Route::prefix("app")
     ->middleware("jwt")
     ->group(function () {
         Route::post("/tomar-turno", [TurnoController::class, "tomarTurnoAndroid"])
-            ->middleware("permiso:tomar-turno,crear"
-        );
-        
-        Route::post("/turno-activo", [TurnoController::class, "TurnoActivo"])
-            ->middleware("permiso:tomar-turno,crear"
-        );
+            ->middleware(
+                "permiso:tomar-turno,crear"
+            );
 
-        
+        Route::post("/turno-activo", [TurnoController::class, "TurnoActivo"])
+            ->middleware(
+                "permiso:tomar-turno,crear"
+            );
+
+
         // 🔹 INGRESAR POSICION EN LA SUCURSAL
         Route::post("/posicion", [TurnoController::class, "posicionamiento"])
-            ->middleware("permiso:posicion,editar"
-        );
+            ->middleware(
+                "permiso:posicion,crear"
+            );
 
         // 👇 NUEVA RUTA PARA CONSULTAR ESTADO
         Route::post("/estado/{id}", [TurnoController::class, "estado"])
-            ->middleware("permiso:tomar-turno,crear"
-        );
-        
-        Route::post("/registrar-dispositivo", [AuthController::class, "registrarDispositivo"])->middleware("jwt");
-       
-        Route::post("/anular/{id}", [TurnoController::class, "anular"])
-            ->middleware("permiso:tomar-turno,crear"
-        );
+            ->middleware(
+                "permiso:tomar-turno,crear"
+            );
 
+        Route::post("/registrar-dispositivo", [AuthController::class, "registrarDispositivo"])->middleware("jwt");
+
+        Route::post("/anular/{id}", [TurnoController::class, "anular"])
+            ->middleware(
+                "permiso:tomar-turno,crear"
+            );
+
+        Route::post('/cambiar-password',        [AuthController::class, 'cambiarPassword']);
+        Route::get("/buscararticulo",           [StockController::class, "buscarArticulo"]);
+        Route::get('/requerimiento/buscar',     [StockController::class, 'buscarRequerimiento']);
+        Route::post('/requerimiento/crear',     [StockController::class, 'crearRequerimiento']);
+        Route::get('/requerimiento/respuestas', [StockController::class, 'obtenerRespuestas']);
+        Route::post('/requerimiento/responder', [StockController::class, 'responder']);
+        Route::get('/requerimiento/listar',     [StockController::class, 'listarHoy']);
+        Route::post('/requerimiento/tomar',     [StockController::class, 'tomarRequerimiento']);
+        Route::post('/requerimiento/detalle',   [StockController::class, 'detalle']);
+        Route::get('/secciones/listar',         [StockController::class, 'listar']);
     });
+
+
 

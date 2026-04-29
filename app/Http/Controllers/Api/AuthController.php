@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -43,6 +45,7 @@ class AuthController extends Controller
             "success" => true,
         ]);
     }
+
     public function login(Request $request)
     {
         // 🔹 Validación
@@ -174,4 +177,68 @@ class AuthController extends Controller
             "permissions" => $permisosAgrupados,
         ]);
     }
+
+    public function cambiarPassword(Request $request)
+    {
+        $user = auth()->user();
+
+        // Validación básica
+        if (!$request->filled('actual') || !$request->filled('nueva')) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Todos los campos son obligatorios'
+            ], 400);
+        }
+
+        $actual = trim($request->actual);
+        $nueva = trim($request->nueva);
+        Log::info("PASSWORD DEBUG", [
+            'actual' => $actual,
+            'nueva' => $user->password,
+        ]);
+
+        if (strlen($request->nueva) < 6) {
+            return response()->json([
+                'success' => false,
+                'error' => 'La contraseña debe tener al menos 6 caracteres'
+            ], 400);
+        }
+
+        $actual = trim($request->actual);
+
+
+
+        // Verificar contraseña actual
+        if (!\Hash::check($request->actual, $user->password_hash)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Contraseña actual incorrecta'
+            ], 400);
+        }
+
+        // Evitar reutilizar la misma contraseña
+        if (\Hash::check($request->nueva, $user->password_hash)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'La nueva contraseña no puede ser igual a la actual'
+            ], 400);
+        }
+
+
+        // Actualizar contraseña
+        \DB::table('tbl_usuarios')
+            ->where('id', $user->id)
+            ->update([
+                'password_hash' => bcrypt($request->nueva)
+            ]);
+
+        $actual = trim($request->actual);
+
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Contraseña actualizada correctamente'
+        ]);
+    }
 }
+
