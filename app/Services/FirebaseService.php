@@ -8,12 +8,20 @@ use Google\Auth\Credentials\ServiceAccountCredentials;
 
 class FirebaseService
 {
-    public static function enviarNotificacion($token, $data = [])
+    public static function enviarNotificacion($token, $titulo = null, $mensaje = null, $data = [])
     {
         try {
 
+            if (is_array($titulo) && $mensaje === null) {
+                $data = $titulo;
+                $titulo = $data["Titulo"] ?? $data["titulo"] ?? null;
+                $mensaje = $data["Mensaje"] ?? $data["mensaje"] ?? null;
+            }
+
+            $data = $data ?? [];
+
             if (empty($token)) {
-                Log::warning("FCM token vacío, no se envía notificación");
+                Log::warning("FCM token vacÃ­o, no se envÃ­a notificaciÃ³n");
                 return false;
             }
 
@@ -31,8 +39,14 @@ class FirebaseService
 
             $accessToken = $authToken['access_token'];
             $projectId = 'turno-app-926b6';
+            if ($titulo !== null) {
+                $data["Titulo"] = $titulo;
+            }
 
-            // 🔥 IMPORTANTE
+            if ($mensaje !== null) {
+                $data["Mensaje"] = $mensaje;
+            }
+
             $payloadData = array_map('strval', $data);
 
             $response = Http::withHeaders([
@@ -43,6 +57,10 @@ class FirebaseService
                     [
                         "message" => [
                             "token" => $token,
+                            "notification" => [
+                                "title" => $titulo ?? ($payloadData["Titulo"] ?? ""),
+                                "body" => $mensaje ?? ($payloadData["Mensaje"] ?? "")
+                            ],
                             "android" => [
                                 "priority" => "high"
                             ],
@@ -51,20 +69,17 @@ class FirebaseService
                     ]
                 );
 
-            // 🔍 LOG CLAVE
+            // ðŸ” LOG CLAVE
             Log::info("FCM RESPONSE", [
                 "status" => $response->status(),
                 "body" => $response->json()
             ]);
-            // 🔥 Manejo de token inválido
+            // ðŸ”¥ Manejo de token invÃ¡lido
             if (
                 isset($response['error']['details'][0]['errorCode']) &&
                 $response['error']['details'][0]['errorCode'] === 'UNREGISTERED'
             ) {
-                Log::warning("Token inválido detectado", ["token" => $token]);
-
-                // 👉 OPCIONAL PERO RECOMENDADO
-                // DB::table('tbl_usuarios')->where('fcm_token', $token)->update(['fcm_token' => null]);
+                Log::warning("Token invÃ¡lido detectado", ["token" => $token]);
             }
 
             Log::info("Respuesta FCM", [
@@ -83,7 +98,7 @@ class FirebaseService
             return $response->json();
 
         } catch (\Throwable $e) {
-            Log::error("Excepción enviando FCM: " . $e->getMessage());
+            Log::error("ExcepciÃ³n enviando FCM: " . $e->getMessage());
             return false;
         }
     }
@@ -93,7 +108,7 @@ class FirebaseService
 
             // Validar token
             if (empty($token)) {
-                Log::warning("FCM token vacío, no se envía notificación");
+                Log::warning("FCM token vacÃ­o, no se envÃ­a notificaciÃ³n");
                 return false;
             }
 
@@ -115,7 +130,7 @@ class FirebaseService
 
             $projectId = 'turno-app-926b6';
 
-            // Enviar notificación
+            // Enviar notificaciÃ³n
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$accessToken}",
                 'Content-Type' => 'application/json'
@@ -127,7 +142,7 @@ class FirebaseService
                                 "title" => $titulo,
                                 "body" => $mensaje
                             ],
-                            "data" => array_map('strval', $data ?? []) // 👈 NUEVO
+                            "data" => array_map('strval', $data ?? []) // ðŸ‘ˆ NUEVO
                         ]
                     ]
                 );
@@ -136,18 +151,18 @@ class FirebaseService
                 $response['error']['details'][0]['errorCode'] === 'UNREGISTERED'
             ) {
 
-                Log::warning("Token inválido detectado", [
+                Log::warning("Token invÃ¡lido detectado", [
                     "token" => $token
                 ]);
             }
 
-            // Registrar respuesta para depuración
+            // Registrar respuesta para depuraciÃ³n
             Log::info("Respuesta FCM", [
                 "status" => $response->status(),
                 "body" => $response->json()
             ]);
 
-            // Verificar si Firebase devolvió error
+            // Verificar si Firebase devolviÃ³ error
             if (!$response->successful()) {
                 Log::error("Error enviando FCM", [
                     "status" => $response->status(),
@@ -161,13 +176,13 @@ class FirebaseService
         } catch (\Throwable $e) {
 
             // Nunca romper el flujo del sistema
-            Log::error("Excepción enviando FCM: " . $e->getMessage());
+            Log::error("ExcepciÃ³n enviando FCM: " . $e->getMessage());
 
             return false;
         }
     }*/
 
-    public static function enviarNotificacionMultiple($tokens, $titulo, $mensaje, $data)
+    public static function enviarNotificacionMultiple($tokens, $titulo, $mensaje, $data = [])
     {
         $tokens = array_unique(array_filter($tokens));
 

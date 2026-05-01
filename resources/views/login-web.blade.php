@@ -233,6 +233,8 @@
                         "A S D F G H J K L Ñ",
                         "{shift} Z X C V B N M {bksp}",
                         "{numbers} {space} {close}"
+
+                        
                     ],
                     numbers: [
                         "1 2 3 *",
