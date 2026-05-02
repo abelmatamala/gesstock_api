@@ -40,7 +40,7 @@ class StockController extends Controller
         $user = auth()->user();
 
         $reqs = DB::table('tbl_requerimientos as r')
-            ->join('tbl_articulos as a', 'a.id', '=', 'r.articulo_id')
+            ->join('tbl_articulos as a', 'a.id', '=', 'r.producto_id')
             ->where('a.numero_articulo', $request->numero_articulo)
             ->where('r.sucursal_idq', $user->sucursal_id)
             ->whereDate('r.created_at', '>=', now()->subDay())
@@ -113,7 +113,7 @@ class StockController extends Controller
 
             // ðŸ”´ Validar duplicado
             $existeActivo = DB::table('tbl_requerimientos')
-                ->where('articulo_id', $articuloId)
+                ->where('producto_id', $articuloId)
                 ->where('usuario_crea_id', $user->id)
                 ->where('sucursal_id', $request->sucursal_id)
                 ->where('activo', true)
@@ -363,7 +363,7 @@ class StockController extends Controller
 
         // 🧠 Base query
         $query = DB::table('tbl_requerimientos as r')
-            ->join('tbl_articulos as a', 'a.id', '=', 'r.articulo_id')
+            ->join('tbl_articulos as a', 'a.id', '=', 'r.producto_id')
             ->join('tbl_sucursales as s', 's.id', '=', 'r.sucursal_id')
             ->whereDate('r.created_at', now())
             ->where('r.sucursal_id', $request->sucursal_id);
