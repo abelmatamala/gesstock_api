@@ -175,8 +175,13 @@ class StockController extends Controller
         } catch (\Exception $e) {
 
             DB::rollBack();
-
-            return $this->fail('Error al crear requerimiento', 500);
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ], 500);
+            //return $this->fail('Error al crear requerimiento', 500);
         }
     }
 
@@ -346,7 +351,7 @@ class StockController extends Controller
             //->whereNull('motivo_cierre')
             ->where('fecha_cierre', '<', now())
             ->update([
-                'activo'=> false,
+                'activo' => false,
                 'estado' => 'CERRADO',
                 'motivo_cierre' => DB::raw("
             CASE 
