@@ -128,7 +128,7 @@ class StockController extends Controller
 
             // ðŸ”¹ Crear requerimiento
             $reqId = DB::table('tbl_requerimientos')->insertGetId([
-                'articulo_id' => $articuloId,
+                'producto_id' => $articuloId,
                 'sucursal_id' => $request->sucursal_id,
                 'usuario_crea_id' => $user->id,
                 'estado' => 'Esperando...',
