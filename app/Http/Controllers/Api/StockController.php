@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class StockController extends Controller
 {
@@ -63,6 +64,7 @@ class StockController extends Controller
             'numero_articulo' => 'required|string|max:50',
             'descripcion' => 'required|string|max:255',
             'sucursal_id' => 'required|integer',
+            'seccion_id' => 'required|integer|exists:tbl_secciones,id',
             'cantidad' => 'required|integer',
             'imagenes' => 'required|array|min:1|max:3',
             'imagenes.*' => 'image|max:2048'
@@ -140,6 +142,10 @@ class StockController extends Controller
 
             $urls = [];
 
+            if (!$request->hasFile('imagenes')) {
+                throw new \Exception('No llegaron imagenes validas al servidor');
+            }
+
             // ðŸ”¥ GUARDAR MÃšLTIPLES IMÃGENES
             foreach ($request->file('imagenes') as $index => $imagen) {
 
@@ -147,23 +153,51 @@ class StockController extends Controller
                     $request->numero_articulo . '_' .
                     $user->id . '_' . $index . '.' .
                     $imagen->getClientOriginalExtension();
+                $rutaDestino = public_path('requerimientos');
 
-                $path = $imagen->storeAs(
-                    'requerimientos',
-                    $filename,
-                    'public'
-                );
+                if (!file_exists($rutaDestino)) {
+                    mkdir($rutaDestino, 755, true);
+                }
 
-                $urls[] = url('storage/' . $path);
+                $imagen->move($rutaDestino, $filename);
 
-                // ðŸ”¹ Historial por imagen
+                $rutaPublica = '/requerimientos/' . $filename;
+
+                if (!file_exists($rutaDestino . '/' . $filename)) {
+                    throw new \Exception('No se pudo guardar la imagen');
+                }
+
+                $urls[] = $rutaPublica;
+
+                // 🔹 Historial por imagen
                 DB::table('tbl_requerimiento_historial')->insert([
                     'requerimiento_id' => $reqId,
                     'usuario_id' => $user->id,
                     'comentario' => $request->descripcion,
-                    'foto_url' => $path,
+                    'foto_url' => $rutaPublica,
                     'created_at' => $now
                 ]);
+                
+                /* $path = $imagen->storeAs(
+                     'requerimientos',
+                     $filename,
+                     'public'
+                 );
+
+                 if (!$path || !Storage::disk('public')->exists($path)) {
+                     throw new \Exception('No se pudo guardar la imagen en storage/public');
+                 }
+
+                 $urls[] = Storage::disk('public')->url($path);
+
+                 // ðŸ”¹ Historial por imagen
+                 DB::table('tbl_requerimiento_historial')->insert([
+                     'requerimiento_id' => $reqId,
+                     'usuario_id' => $user->id,
+                     'comentario' => $request->descripcion,
+                     'foto_url' => $path,
+                     'created_at' => $now
+                 ]); */
             }
 
             DB::commit();
@@ -466,6 +500,14 @@ class StockController extends Controller
                 'h.created_at',
                 'r.nombre as respuesta_nombre'
             ]);
+
+        $data = $data->map(function ($item) {
+            if (!empty($item->foto_url) && !str_starts_with($item->foto_url, 'http')) {
+                $item->foto_url = Storage::disk('public')->url($item->foto_url);
+            }
+
+            return $item;
+        });
 
         return $this->ok($data);
     }
