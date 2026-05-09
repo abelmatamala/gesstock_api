@@ -502,10 +502,6 @@ class StockController extends Controller
             ]);
 
         $data = $data->map(function ($item) {
-            if (!empty($item->foto_url) && !str_starts_with($item->foto_url, 'http')) {
-                $item->foto_url = Storage::disk('public')->url($item->foto_url);
-            }
-
             return $item;
         });
 

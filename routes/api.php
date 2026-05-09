@@ -91,15 +91,15 @@ Route::prefix("app")
             );
 
         Route::post('/cambiar-password',        [AuthController::class, 'cambiarPassword']);
-        Route::get("/buscararticulo",           [StockController::class, "buscarArticulo"]);
-        Route::get('/requerimiento/buscar',     [StockController::class, 'buscarRequerimiento']);
+        Route::get ("/buscararticulo",          [StockController::class, "buscarArticulo"]);
+        Route::get ('/requerimiento/buscar',    [StockController::class, 'buscarRequerimiento']);
         Route::post('/requerimiento/crear',     [StockController::class, 'crearRequerimiento']);
-        Route::get('/requerimiento/respuestas', [StockController::class, 'obtenerRespuestas']);
+        Route::get ('/requerimiento/respuestas',[StockController::class, 'obtenerRespuestas']);
         Route::post('/requerimiento/responder', [StockController::class, 'responder']);
-        Route::get('/requerimiento/listar',     [StockController::class, 'listarHoy']);
+        Route::get ('/requerimiento/listar',    [StockController::class, 'listarHoy']);
         Route::post('/requerimiento/tomar',     [StockController::class, 'tomarRequerimiento']);
         Route::post('/requerimiento/detalle',   [StockController::class, 'detalle']);
-        Route::get('/secciones/listar',         [StockController::class, 'listar']);
+        Route::get ('/secciones/listar',        [StockController::class, 'listar']);
     });
 
 
