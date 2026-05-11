@@ -23,6 +23,7 @@
 /node_modules/
 /public/build/
 /public/hot
+/public/requerimientos
 npm-debug.log
 yarn-error.log
 pnpm-debug.log
