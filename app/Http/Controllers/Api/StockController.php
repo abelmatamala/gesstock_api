@@ -242,6 +242,7 @@ class StockController extends Controller
 
     // =========================================================
 
+    
     public function responder(Request $request)
     {
         $request->validate([
