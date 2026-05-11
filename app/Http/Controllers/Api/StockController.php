@@ -177,27 +177,6 @@ class StockController extends Controller
                     'foto_url' => $rutaPublica,
                     'created_at' => $now
                 ]);
-                
-                /* $path = $imagen->storeAs(
-                     'requerimientos',
-                     $filename,
-                     'public'
-                 );
-
-                 if (!$path || !Storage::disk('public')->exists($path)) {
-                     throw new \Exception('No se pudo guardar la imagen en storage/public');
-                 }
-
-                 $urls[] = Storage::disk('public')->url($path);
-
-                 // ðŸ”¹ Historial por imagen
-                 DB::table('tbl_requerimiento_historial')->insert([
-                     'requerimiento_id' => $reqId,
-                     'usuario_id' => $user->id,
-                     'comentario' => $request->descripcion,
-                     'foto_url' => $path,
-                     'created_at' => $now
-                 ]); */
             }
 
             DB::commit();
@@ -279,7 +258,7 @@ class StockController extends Controller
             ->where('id', $request->requerimiento_id)
             ->first();
 
-        if (!$req || $req->activo !== true) {
+        if (!$req || $req->activo !== 1) {
             return $this->fail('Requerimiento no vÃ¡lido', 400);
         }
 
@@ -482,31 +461,31 @@ class StockController extends Controller
     }
 
     // =========================================================
-    public function detalle(Request $request)
-    {
-        $request->validate([
-            'requerimiento_id' => 'required|exists:tbl_requerimientos,id'
-        ]);
-
-        $data = DB::table('tbl_requerimiento_historial as h')
-            ->leftJoin('tbl_respuestas as r', 'r.id', '=', 'h.respuesta_id')
-            ->where('h.requerimiento_id', $request->requerimiento_id)
-            ->orderBy('h.created_at', 'asc')
-            ->get([
-                'h.id',
-                'h.usuario_id',
-                'h.comentario',
-                'h.foto_url',
-                'h.created_at',
-                'r.nombre as respuesta_nombre'
+        public function detalle(Request $request)
+        {
+            $request->validate([
+                'requerimiento_id' => 'required|exists:tbl_requerimientos,id'
             ]);
 
-        $data = $data->map(function ($item) {
-            return $item;
-        });
+            $data = DB::table('tbl_requerimiento_historial as h')
+                ->leftJoin('tbl_respuestas as r', 'r.id', '=', 'h.respuesta_id')
+                ->where('h.requerimiento_id', $request->requerimiento_id)
+                ->orderBy('h.created_at', 'asc')
+                ->get([
+                    'h.id',
+                    'h.usuario_id',
+                    'h.comentario',
+                    'h.foto_url',
+                    'h.created_at',
+                    'r.nombre as respuesta_nombre'
+                ]);
 
-        return $this->ok($data);
-    }
+            $data = $data->map(function ($item) {
+                return $item;
+            });
+
+            return $this->ok($data);
+        }
 
     public function listar()
     {
