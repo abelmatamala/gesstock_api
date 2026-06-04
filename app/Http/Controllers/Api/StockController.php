@@ -147,7 +147,10 @@ class StockController extends Controller
             }
 
             // ðŸ”¥ GUARDAR MÃšLTIPLES IMÃGENES
-            foreach ($request->file('imagenes') as $index => $imagen) {
+            $imagenes = $request->file('imagenes');
+            $ultimaImagenIndex = count($imagenes) - 1;
+
+            foreach ($imagenes as $index => $imagen) {
 
                 $filename = $now->format('Ymd_His') . '_' .
                     $request->numero_articulo . '_' .
@@ -156,7 +159,7 @@ class StockController extends Controller
                 $rutaDestino = public_path('requerimientos');
 
                 if (!file_exists($rutaDestino)) {
-                    mkdir($rutaDestino, 755, true);
+                    mkdir($rutaDestino, 0755, true);
                 }
 
                 $imagen->move($rutaDestino, $filename);
@@ -175,6 +178,7 @@ class StockController extends Controller
                     'usuario_id' => $user->id,
                     'comentario' => $request->descripcion,
                     'foto_url' => $rutaPublica,
+                    'es_ultima' => $index === $ultimaImagenIndex ? 1 : 0,
                     'created_at' => $now
                 ]);
             }
@@ -249,7 +253,9 @@ class StockController extends Controller
             'requerimiento_id' => 'required|exists:tbl_requerimientos,id',
             'respuesta_id' => 'required|exists:tbl_respuestas,id',
             'comentario' => 'nullable|string|max:255',
-            'imagen' => 'nullable|image|max:2048'
+            'imagen' => 'nullable|image|max:2048',
+            'imagenes' => 'nullable|array|max:3',
+            'imagenes.*' => 'image|max:2048'
         ]);
 
         $user = auth()->user();
@@ -273,32 +279,49 @@ class StockController extends Controller
         $destino = $request->respuesta_id;
 
         // ðŸ”¹ Imagen opcional
-        $path = null;
+        $paths = [null];
+        $archivos = [];
 
-        if ($request->hasFile('imagen')) {
-            $filename = $now->format('Ymd_His') . '_' . $req->id . '_' . $user->id . '.' .
-                $request->file('imagen')->extension();
+        if ($request->hasFile('imagenes')) {
+            $archivos = $request->file('imagenes');
+        } elseif ($request->hasFile('imagen')) {
+            $archivos = [$request->file('imagen')];
+        }
 
-            $path = $request->file('imagen')->storeAs(
-                'requerimientos',
-                $filename,
-                'public'
-            );
+        if (!empty($archivos)) {
+            $paths = [];
+            $rutaDestino = public_path('requerimientos');
+
+            if (!file_exists($rutaDestino)) {
+                mkdir($rutaDestino, 0755, true);
+            }
+
+            foreach ($archivos as $index => $imagen) {
+                $filename = $now->format('Ymd_His') . '_' . $req->id . '_' . $user->id . '_' . $index . '.' .
+                    $imagen->getClientOriginalExtension();
+
+                $imagen->move($rutaDestino, $filename);
+                $paths[] = '/requerimientos/' . $filename;
+            }
         }
 
         DB::table('tbl_requerimiento_historial')
             ->where('requerimiento_id', $req->id)
             ->update(['es_ultima' => 0]);
 
-        DB::table('tbl_requerimiento_historial')->insert([
-            'requerimiento_id' => $req->id,
-            'usuario_id' => $user->id,
-            'respuesta_id' => $destino,
-            'comentario' => $request->comentario,
-            'foto_url' => $path,
-            'es_ultima' => 1,
-            'created_at' => $now
-        ]);
+        $ultimaImagenIndex = count($paths) - 1;
+
+        foreach ($paths as $index => $path) {
+            DB::table('tbl_requerimiento_historial')->insert([
+                'requerimiento_id' => $req->id,
+                'usuario_id' => $user->id,
+                'respuesta_id' => $destino,
+                'comentario' => $request->comentario,
+                'foto_url' => $path,
+                'es_ultima' => $index === $ultimaImagenIndex ? 1 : 0,
+                'created_at' => $now
+            ]);
+        }
 
         if ($origen) {
             DB::table('tbl_respuesta_flujo')
